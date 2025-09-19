@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตัวแบ่งคะแนน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f7f9fb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2.5rem 1rem;
+            flex-direction: column;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.05);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        textarea, input[type="number"] {
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid #e0e6ed;
+            transition: all 0.2s ease-in-out;
+        }
+        textarea:focus, input[type="number"]:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .styled-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+        }
+        .styled-table thead {
+            background-color: #eef2ff;
+        }
+        .styled-table th {
+            padding: 1rem 1rem;
+            font-weight: 600;
+            color: #4a5568;
+            text-align: center;
+            border-right: 1px solid #d1d5db;
+        }
+        .styled-table td {
+            padding: 1rem 1rem;
+            text-align: center;
+            border-right: 1px solid #e2e8f0;
+        }
+        .styled-table tr:last-child td {
+            border-bottom: none;
+        }
+        .styled-table th:last-child, .styled-table td:last-child {
+            border-right: none;
+        }
+        .styled-table tr:nth-child(even) {
+            background-color: #fafbfd;
+        }
+        /* Modal styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 class="text-3xl font-bold mb-4 text-gray-800">ตัวแบ่งคะแนน</h1>
+        <p class="text-gray-600 mb-6">
+            กำหนดการแบ่งคะแนนตามที่คุณต้องการแล้วจึงค่อยวางคะแนนเพื่อคำนวณ
+        </p>
+
+        <!-- Configuration Section -->
+        <div class="mb-8 p-6 bg-indigo-50 rounded-xl border border-indigo-100">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">การตั้งค่า</h2>
+            <div class="mb-4">
+                <label for="numChannels" class="block text-gray-700 font-medium mb-2 text-left">จำนวนช่องที่ต้องการแบ่ง</label>
+                <div class="input-group">
+                    <input type="number" id="numChannels" value="2" min="1" class="w-full rounded-xl p-2 border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all">
+                    <button id="generateInputsBtn" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-xl hover:bg-indigo-700 transition-colors shadow-md">
+                        ตั้งค่า
+                    </button>
+                </div>
+            </div>
+            
+            <div id="channelInputsContainer" class="grid grid-cols-2 gap-4 text-left">
+                <!-- Dynamic inputs will be added here -->
+            </div>
+        </div>
+        
+        <!-- Calculation Section -->
+        <div class="mb-4">
+            <label for="scoreInput" class="block text-gray-700 font-medium mb-2 text-left">วางคะแนนที่นี่ (คั่นด้วยช่องว่างหรือขึ้นบรรทัดใหม่)</label>
+            <textarea id="scoreInput" rows="8" class="w-full border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all" placeholder="เช่น 38 42 45 หรือ&#10;38&#10;42&#10;45"></textarea>
+        </div>
+
+        <button id="calculateBtn" class="w-full bg-indigo-600 text-white font-semibold py-3 px-4 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg">
+            คำนวณทั้งหมด
+        </button>
+
+    </div>
+
+    <!-- Modal for Results -->
+    <div id="resultsModal" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">ผลลัพธ์</h2>
+            <div class="overflow-x-auto">
+                <table class="styled-table text-left">
+                    <thead id="resultsTableHeader">
+                        <!-- Dynamic headers will be added here -->
+                    </thead>
+                    <tbody id="resultsTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <button id="exportBtn" class="mt-4 bg-green-600 text-white font-semibold py-2 px-4 rounded-xl hover:bg-green-700 transition-colors shadow-md">
+                ส่งออกไปยัง Google Sheets
+            </button>
+        </div>
+    </div>
+    
+    <!-- Error Message Container -->
+    <div id="errorContainer" class="mt-8 hidden p-4 bg-red-100 text-red-700 rounded-xl">
+        <p id="errorMessage" class="font-medium"></p>
+    </div>
+
+    <footer class="mt-8 text-center text-gray-500 text-sm w-full">
+        พัฒนาโดย ครูเพชร@2025
+    </footer>
+
+    <script>
+        const generateInputsBtn = document.getElementById('generateInputsBtn');
+        const numChannelsInput = document.getElementById('numChannels');
+        const channelInputsContainer = document.getElementById('channelInputsContainer');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const scoreInput = document.getElementById('scoreInput');
+        const resultsModal = document.getElementById('resultsModal');
+        const modalCloseBtn = document.querySelector('.modal-close-btn');
+        const resultsTableHeader = document.getElementById('resultsTableHeader');
+        const resultsTableBody = document.getElementById('resultsTableBody');
+        const exportBtn = document.getElementById('exportBtn');
+        
+        const errorContainer = document.getElementById('errorContainer');
+        const errorMessageDisplay = document.getElementById('errorMessage');
+
+        let allResults = []; // Variable to store results for export
+
+        // Initial setup
+        generateChannelInputs();
+
+        generateInputsBtn.addEventListener('click', generateChannelInputs);
+        numChannelsInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                generateChannelInputs();
+            }
+        });
+        calculateBtn.addEventListener('click', calculateScores);
+        modalCloseBtn.addEventListener('click', () => {
+            resultsModal.classList.add('hidden');
+        });
+        exportBtn.addEventListener('click', exportToCSV);
+
+        function generateChannelInputs() {
+            const numChannels = parseInt(numChannelsInput.value, 10);
+            if (isNaN(numChannels) || numChannels < 1) {
+                numChannelsInput.value = 1;
+                return;
+            }
+            channelInputsContainer.innerHTML = '';
+            for (let i = 0; i < numChannels; i++) {
+                const label = document.createElement('label');
+                label.textContent = `คะแนนเต็มช่องที่ ${i + 1}`;
+                label.classList.add('block', 'text-gray-700', 'font-medium', 'mb-1');
+
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.value = (i === 0) ? 30 : 20; // Default values
+                input.min = "1";
+                input.classList.add('channel-max-score', 'w-full', 'rounded-xl', 'p-2', 'border-gray-300', 'focus:border-indigo-500', 'focus:ring-2', 'focus:ring-indigo-200', 'transition-all');
+                
+                const div = document.createElement('div');
+                div.classList.add('mb-4');
+                div.appendChild(label);
+                div.appendChild(input);
+
+                channelInputsContainer.appendChild(div);
+            }
+        }
+
+        function calculateScores() {
+            if (errorContainer && errorMessageDisplay) {
+                errorContainer.classList.add('hidden');
+            }
+            resultsTableBody.innerHTML = '';
+            
+            const scoresText = scoreInput.value;
+            const scoresList = scoresText.split('\n').map(line => line.trim()).filter(line => line !== '');
+            
+            const channelMaxScores = Array.from(document.querySelectorAll('.channel-max-score')).map(input => parseInt(input.value, 10));
+            
+            if (channelMaxScores.some(isNaN) || channelMaxScores.some(score => score <= 0)) {
+                if (errorMessageDisplay) {
+                    errorMessageDisplay.textContent = 'กรุณาใส่คะแนนเต็มของแต่ละช่องให้ถูกต้อง (เป็นตัวเลขและมากกว่า 0)';
+                }
+                if (errorContainer) {
+                    errorContainer.classList.remove('hidden');
+                }
+                return;
+            }
+            
+            const results = [];
+
+            if (scoresList.length === 0) {
+                 if (errorMessageDisplay) {
+                     errorMessageDisplay.textContent = 'กรุณาใส่คะแนนอย่างน้อยหนึ่งคะแนน';
+                 }
+                 if (errorContainer) {
+                     errorContainer.classList.remove('hidden');
+                 }
+                return;
+            }
+
+            scoresList.forEach((scoreLine) => {
+                const scoresInLine = scoreLine.split(/\s+/).filter(Boolean);
+
+                if (scoresInLine.length === 0) {
+                    results.push({ total: 'ค่าว่าง', split: Array(channelMaxScores.length).fill('ค่าว่าง') });
+                    return;
+                }
+
+                scoresInLine.forEach(scoreStr => {
+                    const totalScore = parseInt(scoreStr, 10);
+                    
+                    if (isNaN(totalScore) || scoreStr.trim() === '') {
+                        results.push({ total: 'ค่าว่าง', split: Array(channelMaxScores.length).fill('ค่าว่าง') });
+                    } else if (totalScore === 0) {
+                        results.push({ total: 0, split: Array(channelMaxScores.length).fill(0) });
+                    } else {
+                        const finalScores = calculateSplit(totalScore, channelMaxScores);
+                        results.push({ total: totalScore, split: finalScores });
+                    }
+                });
+            });
+
+            allResults = results; // Store results for export
+            updateResultsTable(results);
+            resultsModal.classList.remove('hidden');
+        }
+
+        function calculateSplit(totalScore, channelMaxes) {
+            const minTiers = [0.70, 0.60, 0.50];
+            for (const minTier of minTiers) {
+                const channelMins = channelMaxes.map(max => Math.ceil(max * minTier));
+                const sumOfMins = channelMins.reduce((sum, min) => sum + min, 0);
+
+                if (totalScore >= sumOfMins) {
+                    let scoreToDistribute = totalScore - sumOfMins;
+                    let scores = channelMins.slice();
+                    const totalRoom = channelMaxes.reduce((sum, max, i) => sum + (max - channelMins[i]), 0);
+                    
+                    if (totalRoom > 0) {
+                        for (let i = 0; i < scores.length; i++) {
+                            const room = channelMaxes[i] - channelMins[i];
+                            if (room > 0) {
+                                const scoreToAdd = Math.floor(scoreToDistribute * (room / totalRoom));
+                                scores[i] += scoreToAdd;
+                            }
+                        }
+                    }
+                    
+                    const finalSum = scores.reduce((sum, score) => sum + score, 0);
+                    let diff = totalScore - finalSum;
+                    
+                    for (let i = 0; i < scores.length && diff !== 0; i++) {
+                        if (diff > 0) {
+                            if (scores[i] < channelMaxes[i]) {
+                                scores[i]++;
+                                diff--;
+                            }
+                        } else {
+                            if (scores[i] > channelMins[i]) {
+                                scores[i]--;
+                                diff++;
+                            }
+                        }
+                    }
+                    return scores.map((score, i) => Math.min(Math.max(score, channelMins[i]), channelMaxes[i]));
+                }
+            }
+            
+            // Fallback for scores below 50% minimum
+            const totalMax = channelMaxes.reduce((sum, max) => sum + max, 0);
+            let scores = channelMaxes.map(max => Math.floor(totalScore * (max / totalMax)));
+            
+            const finalSum = scores.reduce((sum, score) => sum + score, 0);
+            let diff = totalScore - finalSum;
+
+            for (let i = 0; i < scores.length && diff !== 0; i++) {
+                scores[i]++;
+                diff--;
+            }
+
+            return scores;
+        }
+
+        function updateResultsTable(results) {
+            const numChannels = document.querySelectorAll('.channel-max-score').length;
+            resultsTableHeader.innerHTML = '';
+            
+            const headerRow = document.createElement('tr');
+            headerRow.classList.add('bg-gray-100');
+            headerRow.innerHTML = `
+                <th class="p-3 text-sm font-semibold text-gray-700 rounded-tl-xl">ลำดับ</th>
+                <th class="p-3 text-sm font-semibold text-gray-700">คะแนนรวม</th>
+            `;
+            for (let i = 0; i < numChannels; i++) {
+                const header = document.createElement('th');
+                header.classList.add('p-3', 'text-sm', 'font-semibold', 'text-gray-700');
+                header.textContent = `ช่องที่ ${i + 1}`;
+                headerRow.appendChild(header);
+            }
+            const lastHeader = headerRow.querySelector('th:last-child');
+            if (lastHeader) {
+                lastHeader.classList.add('rounded-tr-xl');
+            }
+            resultsTableHeader.appendChild(headerRow);
+
+            results.forEach((result, index) => {
+                const row = document.createElement('tr');
+                row.className = `border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`;
+                let rowHtml = `
+                    <td class="p-3 text-sm text-gray-800 rounded-bl-xl">${index + 1}</td>
+                    <td class="p-3 text-sm text-gray-800">${result.total}</td>
+                `;
+                result.split.forEach(score => {
+                    rowHtml += `<td class="p-3 text-sm text-gray-800">${score}</td>`;
+                });
+                row.innerHTML = rowHtml;
+                const lastTd = row.querySelector('td:last-child');
+                if (lastTd) {
+                    lastTd.classList.add('rounded-br-xl');
+                }
+                resultsTableBody.appendChild(row);
+            });
+        }
+        
+        function exportToCSV() {
+            if (allResults.length === 0) {
+                alert('ไม่มีข้อมูลให้ส่งออก');
+                return;
+            }
+
+            const channelMaxScores = Array.from(document.querySelectorAll('.channel-max-score')).map((input, i) => `ช่องที่ ${i + 1}`);
+            const headers = ['ลำดับ', 'คะแนนรวม', ...channelMaxScores];
+            
+            let csvContent = headers.join(',') + '\n';
+            
+            allResults.forEach((result, index) => {
+                const rowData = [
+                    index + 1,
+                    result.total,
+                    ...result.split
+                ];
+                csvContent += rowData.join(',') + '\n';
+            });
+
+            const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'คะแนนที่แบ่ง.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+    </script>
+</body>
+</html>
